@@ -51,7 +51,7 @@ bool weebo_load_key_retail(Weebo* weebo) {
 bool weebo_load_figure(Weebo* weebo, FuriString* path, bool show_dialog) {
     bool parsed = false;
     FuriString* reason = furi_string_alloc_set("Couldn't load file");
-    uint8_t buffer[NTAG215_SIZE];
+    uint8_t buffer[AMIIBO_BUFFER_SIZE];
     memset(buffer, 0, sizeof(buffer));
 
     if(weebo->loading_cb) {
@@ -70,7 +70,8 @@ bool weebo_load_figure(Weebo* weebo, FuriString* path, bool show_dialog) {
 
         const MfUltralightData* data = nfc_device_get_data(nfc_device, NfcProtocolMfUltralight);
         MfUltralightType type = data->type;
-        if(type != MfUltralightTypeNTAG215 && type != MfUltralightTypeNTAGI2CPlus1K) {
+        if(type != MfUltralightTypeNTAG215 && type != MfUltralightTypeNTAGI2CPlus1K &&
+           type != MfUltralightTypeNTAGI2CPlus2K) {
             furi_string_printf(reason, "Unsupported tag type");
             break;
         }
@@ -91,12 +92,14 @@ bool weebo_load_figure(Weebo* weebo, FuriString* path, bool show_dialog) {
             break;
         }
 
-        for(size_t i = 0; i < 135; i++) {
+        bool tag_v3 = (type == MfUltralightTypeNTAGI2CPlus2K);
+        size_t tag_pages = tag_v3 ? AMIIBO_V3_PAGES : 135;
+        for(size_t i = 0; i < tag_pages; i++) {
             memcpy(
                 buffer + i * MF_ULTRALIGHT_PAGE_SIZE, data->page[i].data, MF_ULTRALIGHT_PAGE_SIZE);
         }
 
-        if(!nfc3d_amiibo_unpack(&weebo->keys, buffer, weebo->figure, false)) {
+        if(!nfc3d_amiibo_unpack(&weebo->keys, buffer, weebo->figure, tag_v3)) {
             FURI_LOG_E(TAG, "Failed to unpack");
             break;
         }
