@@ -69,8 +69,9 @@ bool weebo_load_figure(Weebo* weebo, FuriString* path, bool show_dialog) {
         }
 
         const MfUltralightData* data = nfc_device_get_data(nfc_device, NfcProtocolMfUltralight);
-        if(data->type != MfUltralightTypeNTAG215) {
-            furi_string_printf(reason, "Not NTAG215");
+        MfUltralightType type = data->type;
+        if(type != MfUltralightTypeNTAG215 && type != MfUltralightTypeNTAGI2CPlus1K) {
+            furi_string_printf(reason, "Unsupported tag type");
             break;
         }
 
@@ -84,7 +85,8 @@ bool weebo_load_figure(Weebo* weebo, FuriString* path, bool show_dialog) {
         uint8_t pwd[4];
         weebo_calculate_pwd(uid, pwd);
 
-        if(memcmp(data->page[133].data, pwd, sizeof(pwd)) != 0) {
+        uint8_t pwd_page = mf_ultralight_get_pwd_page_num(type);
+        if(memcmp(data->page[pwd_page].data, pwd, sizeof(pwd)) != 0) {
             furi_string_printf(reason, "Wrong password");
             break;
         }

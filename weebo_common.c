@@ -38,7 +38,8 @@ void weebo_remix(Weebo* weebo) {
 
     //new pwd
     weebo_calculate_pwd(data->iso14443_3a_data->uid, PWD);
-    memcpy(data->page[133].data, PWD, sizeof(PWD));
+    uint8_t pwd_page = mf_ultralight_get_pwd_page_num(data->type);
+    memcpy(data->page[pwd_page].data, PWD, sizeof(PWD));
 
     //set data
     nfc_device_set_data(weebo->nfc_device, NfcProtocolMfUltralight, data);
